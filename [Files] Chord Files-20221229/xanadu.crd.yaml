@@ -1,0 +1,73 @@
+title: Xanadu
+artist: Electric Light Orchestra
+bpm: 128
+semitones: 0
+time_signature:
+  - 4
+  - 4
+lyrics:
+  - tag: Verse I
+    chords: |
+      E A Am E
+      G#7 C#m
+      Edim F#m B7
+      E A Am E
+      G#7 C#m
+      Edim F#m B7
+    text: |2
+        4           2      2        4
+      A place where nobody dared to go
+          4                    4      
+      The love that we came to know
+                   4     4   4
+      They call it Xanadu
+           4   2         2        4
+      And now, open your eyes and see
+      4                    4      
+      What we have made is real
+                4      4    4
+      We are in Xanadu
+  - tag: Refrain
+    chords: |
+      E G#m
+      A
+      Am Am
+      E G#m
+      A
+      Am Am Am
+    text: |2
+      4         4
+      A million lights are dancing
+          4                2        4
+      And there you are, a shooting star
+      4      4
+      An everlasting world
+                 4              4        2  2 
+      And you're here with me, eternally
+  - tag: Chorus
+    chords: |
+      E F#
+      Am
+      B Am E C D
+      E F#
+      Am
+      B
+      A E B7
+      E
+    text: |2
+      8
+      Xanadu
+      8                  4
+      Xanadu (Now we are here)
+             4  2 2 2 2  
+      In Xanadu
+      8
+      Xanadu
+      8                  4
+      Xanadu (Now we are here)
+             4
+      In Xanadu
+      4            4                8
+      Xanadu, your neon lights will shine
+               8
+      For you, Xanadu
