@@ -16,51 +16,52 @@ Minsan tuloy ako'y naiinis na
 name = '[sample]'
 
 list_EachLine_Lyric = text_in.strip().split('\n')
-list_chords = chords.strip().split()
+chords = chords.strip().split()
 
-str_FullLyrics = ''
+full_text = text_in.split('\n')
+
+text = []
+for idx, line in enumerate(full_text):
+    if idx % 2 != 0:
+        text += [line]
+
+chord_annotations = []
+for idx, line in enumerate(full_text):
+    if idx % 2 == 0 and line != '':
+        chord_annotations += [line]
+
+"""
+__str__
+"""
+str_ChordedLyrics = ''
 offset = 0
 
-for idx, line in enumerate(list_EachLine_Lyric):          
-    if idx == len(list_EachLine_Lyric) - 1:
-        str_FullLyrics += line
-    elif idx % 2 == 0:
-        modified_line = line
-        for i in range(len(re.findall(r'[1-9]', modified_line))):
-            # print('offset = ' + str(offset) + '; i = ' + str(i) + '; line no. = ' + str(idx))
-            if len(list_chords[i + offset - 1]) == 2 and i != 0:
-                index = modified_line.find(r'\d')
-                modified_line = modified_line[:index-1] + modified_line[index]
-                modified_line = re.sub(r'[1-9]', list_chords[i + offset], modified_line, 1)
-            elif len(list_chords[i + offset - 1]) == 3 and i != 0:
-                index = modified_line.find(r'\d')
-                modified_line = modified_line[:index-2] + modified_line[index]
-                modified_line = re.sub(r'[1-9]', list_chords[i + offset], modified_line, 1)
-            else:
-                modified_line = re.sub(r'[1-9]', list_chords[i + offset], modified_line, 1)
-        offset += len(re.findall(r'[1-9]', line))
-        str_FullLyrics += modified_line + '\n'
-    else:
-        str_FullLyrics += line + '\n'
+for line_index, line_chord in enumerate(chord_annotations):
+    modified_line = line_chord
+    for num_chord in range(len(re.findall(r'[1-9]', modified_line))):
+        if len(chords[num_chord + offset - 1]) == 2 and num_chord != 0:
+            index = modified_line.find(r'\d')
+            modified_line = modified_line[:index-1] + modified_line[index]
+            modified_line = re.sub(r'[1-9]', chords[num_chord + offset], modified_line, 1)
+        elif len(chords[num_chord + offset - 1]) == 3 and num_chord != 0:
+            index = modified_line.find(r'\d')
+            modified_line = modified_line[:index-2] + modified_line[index]
+            modified_line = re.sub(r'[1-9]', chords[num_chord + offset], modified_line, 1)
+        else:
+            modified_line = re.sub(r'[1-9]', chords[num_chord + offset], modified_line, 1)
+    offset += len(re.findall(r'[1-9]', line_chord))
+    str_ChordedLyrics += modified_line + '\n'
+    str_ChordedLyrics += text[line_index].strip() + '\n'
 
-# print(str_FullLyrics)
+print(str_ChordedLyrics)
 
-int_Chord = 0
-
-list_full = str_FullLyrics.strip().split('\n')
-
-# for idx, line in enumerate(list1):
-#     if idx % 2 == 0:
-#         line_count = line.strip().split()
-#         int_Chord += len(line_count)
-
-
-
+"""
+def entries()
+"""
 list_entries = []
-line_chord_dur = [x for idx, x in enumerate(list_EachLine_Lyric) if idx % 2 == 0 and x != '']
 counter = 0
 
-for idx, line in enumerate(line_chord_dur):
+for idx, line in enumerate(chord_annotations):
     list_dur = line.strip().split()
     
     chord_elements = []
@@ -76,21 +77,11 @@ for idx, line in enumerate(line_chord_dur):
             temp = temp[chord_col_temp + 1:]
             offset += chord_col_temp + 1
 
-            chord_elements += [(list_chords[counter], chord_col, int(x))]
+            chord_elements += [(chords[counter], chord_col, int(x))]
             counter += 1
 
     list_entries += [(list_EachLine_Lyric[(idx * 2) + 1], chord_elements)]
 
-
-yee = ''
-
-for idx, line in enumerate(list_EachLine_Lyric):          
-    if idx == len(list_EachLine_Lyric) - 1:
-        yee += line
-    else:
-        yee += line + '\n'
-
-print(yee + ' yee')
 
 
 

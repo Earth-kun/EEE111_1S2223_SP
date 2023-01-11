@@ -84,13 +84,18 @@ class ChordedLyricSegment(LyricSegment):
         :type chords: list[str]
         """
         super().__init__(name, text)
-        self.full = self.text
-        lst = []
-        for idx, line in enumerate(self.text):
-            if idx % 2 != 0:
-                lst += [line]
-        self.text = lst
+        self.full_lyrics = self.text
         self.chords = chords.strip().split()
+
+        self.text = []
+        for idx, line in enumerate(self.full_lyrics):
+            if idx % 2 != 0:
+                self.text += [line]
+
+        self.chord_annotations = []
+        for idx, line in enumerate(self.full_lyrics):
+            if idx % 2 == 0 and line != '':
+                self.chord_annotations += [line]
 
     def __len__(self):
         """Count the number of chords in this lyric segment
@@ -119,27 +124,22 @@ class ChordedLyricSegment(LyricSegment):
         str_ChordedLyrics = f'[{self.name}]' + '\n'
         offset = 0
 
-        for idx, line in enumerate(self.full):          
-            if idx == (len(self.full) - 2):
-                str_ChordedLyrics += line.strip()
-            elif idx % 2 == 0:
-                modified_line = line
-                for i in range(len(re.findall(r'[1-9]', modified_line))):
-                    # print('offset = ' + str(offset) + '; i = ' + str(i) + '; line no. = ' + str(idx))
-                    if len(self.chords[i + offset - 1]) == 2 and i != 0:
-                        index = modified_line.find(r'\d')
-                        modified_line = modified_line[:index-1] + modified_line[index]
-                        modified_line = re.sub(r'[1-9]', self.chords[i + offset], modified_line, 1)
-                    elif len(self.chords[i + offset - 1]) == 3 and i != 0:
-                        index = modified_line.find(r'\d')
-                        modified_line = modified_line[:index-2] + modified_line[index]
-                        modified_line = re.sub(r'[1-9]', self.chords[i + offset], modified_line, 1)
-                    else:
-                        modified_line = re.sub(r'[1-9]', self.chords[i + offset], modified_line, 1)
-                offset += len(re.findall(r'[1-9]', line))
-                str_ChordedLyrics += modified_line + '\n'
-            else:
-                str_ChordedLyrics += line.strip() + '\n'
+        for line_index, line_chord in enumerate(self.chord_annotations):
+            modified_line = line_chord
+            for num_chord in range(len(re.findall(r'[1-9]', modified_line))):
+                if len(self.chords[num_chord + offset - 1]) == 2 and num_chord != 0:
+                    index = modified_line.find(r'\d')
+                    modified_line = modified_line[:index-1] + modified_line[index]
+                    modified_line = re.sub(r'[1-9]', self.chords[num_chord + offset], modified_line, 1)
+                elif len(self.chords[num_chord + offset - 1]) == 3 and num_chord != 0:
+                    index = modified_line.find(r'\d')
+                    modified_line = modified_line[:index-2] + modified_line[index]
+                    modified_line = re.sub(r'[1-9]', self.chords[num_chord + offset], modified_line, 1)
+                else:
+                    modified_line = re.sub(r'[1-9]', self.chords[num_chord + offset], modified_line, 1)
+            offset += len(re.findall(r'[1-9]', line_chord))
+            str_ChordedLyrics += modified_line + '\n'
+            str_ChordedLyrics += self.text[line_index].strip() + '\n'
         
         return str_ChordedLyrics.strip()
     
@@ -164,12 +164,11 @@ class ChordedLyricSegment(LyricSegment):
         :rtype: Iterable[tuple[str, list[str, int, int]]]
         """
         list_entries = []
-        # list_EachLine_Lyric = str(self).split('\n')
-        line_chord_dur = [x for idx, x in enumerate(self.full) if idx % 2 == 0 and x != '']
         counter = 0
-
-
-        for idx, line in enumerate(line_chord_dur):
+        # list_EachLine_Lyric = str(self).split('\n')
+        # line_chord_dur = [x for idx, x in enumerate(self.full) if idx % 2 == 0 and x != '']
+        
+        for idx, line in enumerate(self.chord_annotations):
             list_dur = line.strip().split()
             
             chord_elements = []
@@ -188,7 +187,7 @@ class ChordedLyricSegment(LyricSegment):
                     chord_elements += [(self.chords[counter], chord_col, int(x))]
                     counter += 1
 
-            list_entries += [(self.full[(idx * 2) + 1], chord_elements)]
+            list_entries += [(self.text[idx], chord_elements)]
 
         return list_entries
 
@@ -233,8 +232,8 @@ class Song:
         self.title = title
         self.artist = artist
         self.file_path = file_path
-        
-        with open(file_path, 'r+') as fh:
+
+        with open(file_path, 'r') as fh: #assumes that there is a file
             fh.read(16)
 
     @classmethod
