@@ -84,15 +84,13 @@ class ChordedLyricSegment(LyricSegment):
         :type chords: list[str]
         """
         super().__init__(name, text)
-        self.full_lyrics = text
-        self.chords = chords.strip().split()
-
-        temp_list = []
+        self.full = self.text
+        lst = []
         for idx, line in enumerate(self.text):
             if idx % 2 != 0:
-                temp_list += [line]
-        self.text = temp_list
-        
+                lst += [line]
+        self.text = lst
+        self.chords = chords.strip().split()
 
     def __len__(self):
         """Count the number of chords in this lyric segment
@@ -121,7 +119,7 @@ class ChordedLyricSegment(LyricSegment):
         str_ChordedLyrics = f'[{self.name}]' + '\n'
         offset = 0
 
-        for idx, line in enumerate(self.annotated_lyrics):          
+        for idx, line in enumerate(self.full):          
             if idx == (len(self.full) - 2):
                 str_ChordedLyrics += line.strip()
             elif idx % 2 == 0:
@@ -235,8 +233,8 @@ class Song:
         self.title = title
         self.artist = artist
         self.file_path = file_path
-
-        with open(file_path, 'r+') as fh: #assumes that there is a file
+        
+        with open(file_path, 'r+') as fh:
             fh.read(16)
 
     @classmethod
