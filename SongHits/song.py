@@ -32,7 +32,7 @@ class LyricSegment:
         :type text: str
         """
         self.name = name
-        self.text = text.strip().split('\n')
+        self.text = text.split('\n')
 
     def __str__(self):
         """Return a string representation of this lyric segment
@@ -74,31 +74,25 @@ class ChordedLyricSegment(LyricSegment):
         Objects of this class have only the following properties:
         * name
         * text
+        * chords
 
         :param name: name of the lyric segment
         :type name: str
         :param text: lyrics of the segment
-        :type text: str
-        :param chords: accompanying chords of the segment
-        :type chords: str
+        :type text: list[str]
+        :param chords: list containing each accompanying chords of the segment
+        :type chords: list[str]
         """
         super().__init__(name, text)
-        list_EachLine_Lyric = self.text
-        list_Chords = chords.strip().split()
+        self.full_lyrics = text
+        self.chords = chords.strip().split()
+
+        temp_list = []
+        for idx, line in enumerate(self.text):
+            if idx % 2 != 0:
+                temp_list += [line]
+        self.text = temp_list
         
-        str_FullLyrics = self.name + '\n'
-        counter = 0
-        
-        for idx, line in enumerate(list_EachLine_Lyric):          
-            if idx == len(list_EachLine_Lyric) - 1:
-                str_FullLyrics += line
-            elif idx % 2 == 0:
-                import re
-                modified_line = re.sub(r'[123456789]', list_Chords[counter], line)
-                counter += 1
-                str_FullLyrics += modified_line
-            else:
-                self.text += line + '\n'
 
     def __len__(self):
         """Count the number of chords in this lyric segment
@@ -106,12 +100,7 @@ class ChordedLyricSegment(LyricSegment):
         :return: number of chords in this lyric segment
         :rtype: int
         """
-        list_EachLine_Lyric = self.text
-        list_EachLine_Chord = [x for x in list_EachLine_Lyric if list_EachLine_Lyric.index(x) % 2 == 0 ]
-        list_Chord = []
-        for x in list_EachLine_Chord:
-            list_Chord += x.split()
-        return len(list_Chord)
+        return len(self.chords)
 
     def __str__(self):
         """Return a string representation of this lyric segment
@@ -121,7 +110,7 @@ class ChordedLyricSegment(LyricSegment):
             [<segment_name>]
             <segment_lyrics>
 
-        Unline a :py:class:LyricSegment, ``<segment_lyrics>`` contains
+        Unlike a :py:class:LyricSegment, ``<segment_lyrics>`` contains
         both the lyrics and the corresponding chord placements on top
         of each lyric line. Hence, the number of lines in ``<segment_lyrics>``
         should be even.
@@ -129,7 +118,32 @@ class ChordedLyricSegment(LyricSegment):
         :return: the lyrics with the segment name and content
         :rtype: str
         """
-        return f'[{self.name}]\n{self.text}'
+        str_ChordedLyrics = f'[{self.name}]' + '\n'
+        offset = 0
+
+        for idx, line in enumerate(self.annotated_lyrics):          
+            if idx == (len(self.full) - 2):
+                str_ChordedLyrics += line.strip()
+            elif idx % 2 == 0:
+                modified_line = line
+                for i in range(len(re.findall(r'[1-9]', modified_line))):
+                    # print('offset = ' + str(offset) + '; i = ' + str(i) + '; line no. = ' + str(idx))
+                    if len(self.chords[i + offset - 1]) == 2 and i != 0:
+                        index = modified_line.find(r'\d')
+                        modified_line = modified_line[:index-1] + modified_line[index]
+                        modified_line = re.sub(r'[1-9]', self.chords[i + offset], modified_line, 1)
+                    elif len(self.chords[i + offset - 1]) == 3 and i != 0:
+                        index = modified_line.find(r'\d')
+                        modified_line = modified_line[:index-2] + modified_line[index]
+                        modified_line = re.sub(r'[1-9]', self.chords[i + offset], modified_line, 1)
+                    else:
+                        modified_line = re.sub(r'[1-9]', self.chords[i + offset], modified_line, 1)
+                offset += len(re.findall(r'[1-9]', line))
+                str_ChordedLyrics += modified_line + '\n'
+            else:
+                str_ChordedLyrics += line.strip() + '\n'
+        
+        return str_ChordedLyrics.strip()
     
     def entries(self) -> Iterable[tuple[str, list[tuple[str, int, int]]]]:
         """Generate a "list" of lyrics and corresponding chords in the :py:class:`Song`
@@ -151,11 +165,34 @@ class ChordedLyricSegment(LyricSegment):
             containing a tuple
         :rtype: Iterable[tuple[str, list[str, int, int]]]
         """
-        list_EachLine_Lyric = self.text.strip().split('\n')
         list_entries = []
-        for idx, Chord_Line in enumerate(list_EachLine_Lyric[::2]):
-            list_entries += [(list_EachLine_Lyric[idx + 1],(Chord_Line,'chord_col','chord_dur'))]
+        # list_EachLine_Lyric = str(self).split('\n')
+        line_chord_dur = [x for idx, x in enumerate(self.full) if idx % 2 == 0 and x != '']
+        counter = 0
 
+
+        for idx, line in enumerate(line_chord_dur):
+            list_dur = line.strip().split()
+            
+            chord_elements = []
+            temp = line
+            offset = 0
+
+            for x in list_dur:
+                chord_col_temp = re.search(r'[1-9]', temp)
+                if chord_col_temp is not None:
+                    chord_col_temp = chord_col_temp.start()
+                    chord_col = (chord_col_temp + offset)
+
+                    temp = temp[chord_col_temp + 1:]
+                    offset += chord_col_temp + 1
+
+                    chord_elements += [(self.chords[counter], chord_col, int(x))]
+                    counter += 1
+
+            list_entries += [(self.full[(idx * 2) + 1], chord_elements)]
+
+        return list_entries
 
 class Song:
     """Represents a song
@@ -195,7 +232,12 @@ class Song:
         :param file_path: accompanying chords of the segment
         :type file_path: str
         """
-        raise NotImplementedError('Stub code!')
+        self.title = title
+        self.artist = artist
+        self.file_path = file_path
+
+        with open(file_path, 'r+') as fh: #assumes that there is a file
+            fh.read(16)
 
     @classmethod
     def from_filename(cls, file_path: str|Path):
@@ -208,7 +250,7 @@ class Song:
         :return: information in the file stored in a ``Song`` object
         :rtype: Song
         """
-        raise NotImplementedError('Stub code!')
+        return cls(file_path)
 
     @classmethod
     def from_yaml(cls, song_dict: dict):
