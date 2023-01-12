@@ -4,6 +4,7 @@ from collections.abc import Iterable
 # Built-in modules
 import re # HINT: People who know regex may use this module
 from pathlib import Path
+import os
 
 # pip downlodeable modules
 import yaml
@@ -233,8 +234,18 @@ class Song:
         self.artist = artist
         self.file_path = file_path
 
-        with open(file_path, 'r') as fh: #assumes that there is a file
-            fh.read(16)
+        if os.path.isfile(file_path):
+            list_info = []
+            with open(file_path, 'r') as fh: #assumes that there is a file
+                for i in range(7):
+                    list_info += [fh.readline().strip()]
+
+            self.bpm = list_info[2].split()[1]
+            self.global_semitones = list_info[3].split()[1]
+
+            list_info[4 : 7] = [' '.join(list_info[4 : 7]).split(' ', maxsplit=1)]
+            list_info[4] = list_info[4][1].replace('-','').split()
+            self.time_sig = (int(list_info[4][0]), int(list_info[4][1]))
 
     @classmethod
     def from_filename(cls, file_path: str|Path):
@@ -242,12 +253,18 @@ class Song:
 
         :classmethod:
         :param file_path: path where the ``.crd.yaml`` file resides
-        :type file_path: str or Path
+        :type file_path: str or Pa
 
         :return: information in the file stored in a ``Song`` object
         :rtype: Song
         """
-        return cls(file_path)
+        list_info = []
+        if os.path.isfile(file_path):
+            with open(file_path, 'r') as fh:
+                for i in range(2):
+                    list_info += [fh.readline().strip().split(' ', maxsplit=1)]
+            
+            return cls(list_info[0][1], list_info[1][1], file_path)
 
     @classmethod
     def from_yaml(cls, song_dict: dict):
@@ -272,7 +289,10 @@ class Song:
         :return: information in the dictionary stored in a :py:class:`Song` object
         :rtype: :py:class:`Song`
         """
-        raise NotImplementedError('Stub code!')
+        title = song_dict['title']
+        artist = song_dict['artist']
+        file_path = #???????
+        return cls(title, artist, filepath)
 
     def __str__(self):
         """Returns a string with basic information about the song
@@ -284,7 +304,7 @@ class Song:
         :return: string containing information about the :py:class:`Song` object
         :rtype: str
         """
-        raise NotImplementedError('Stub code!')
+        return f'"{self.title}" - by {self.artist}'
 
     def _load_lyrics(self, lyrics_list: list[dict]):
         """Process the lyrics tag found in a ``.crd.yaml`` file
@@ -294,7 +314,17 @@ class Song:
         :param lyrics_list: string containing information about the :py:class:`Song` object
         :type lyrics_list: list[dict]
         """
-        raise NotImplementedError('Stub code!')
+        self.lyrics = []
+        for segment in lyrics_list:
+            self.lyrics += [segment['text']]
+
+        self.segments = []
+        for segment in lyrics_list:
+            self.segments += [segment['tag']]
+
+        self.chords = []
+        for segment in lyrics_list:
+            self.chords += [segment['chords']]
     
     def num_total_lines(self, include_chords: bool=False, include_title: bool=False, include_sep: bool=False):
         """Count the number of total lines in the :py:class:`Song`
@@ -320,7 +350,15 @@ class Song:
             :py:class:`Song` is to be printed
         :rtype: int
         """
-        raise NotImplementedError('Stub code!')
+        total_len = len([x for x in self.lyrics[0].split('\n') if x != '']) // 2
+        if include_chords == True:
+            total_len += len([x for x in self.lyrics[0].split('\n') if x != '']) // 2
+        elif include_title == True:
+            total_len += len(self.segments)
+        elif include_sep == True:
+            total_len += (len([x for x in self.lyrics[0].split('\n') if x == '']) - 1)      
+        
+        return total_len
 
     def entries(self) -> Iterable[ChordedLyricSegment]:
         """Generate a "list" of lyric segments of the :py:class:`Song`
@@ -338,7 +376,9 @@ class Song:
             containing a :py:class:`ChordedLyricSegment`
         :rtype: Iterable[:py:class:`ChordedLyricSegment`]
         """
-        raise NotImplementedError('Stub code!')
+        list_chordedLS = []
+        for index, line in enumerate(self.lyrics):
+            list_chordedLS += [ChordedLyricSegment(self.segments[index], line, self.chords[0])]
 
 class SongCursor:
     """Represents a song cursor
