@@ -84,12 +84,14 @@ class ChordedLyricSegment(LyricSegment):
 
         self.text = []
         for idx, line in enumerate(self.full_lyrics):
-            if idx % 2 != 0:
+            if idx % 2 != 0 and line == '':
+                self.text += ['\n']
+            elif idx % 2 != 0:
                 self.text += [line]
 
         self.chord_annotations = []
         for idx, line in enumerate(self.full_lyrics):
-            if idx % 2 == 0 and line != '':
+            if idx % 2 == 0 and idx != len(self.full_lyrics) - 1:
                 self.chord_annotations += [line]
 
     def __len__(self):
@@ -122,7 +124,9 @@ class ChordedLyricSegment(LyricSegment):
         for line_index, line_chord in enumerate(self.chord_annotations):
             modified_line = line_chord
             for num_chord in range(len(re.findall(r'(?<!\w)\d+(?!\w)', modified_line))):
-                if len(self.chords[num_chord + offset - 1]) > 1 and num_chord != 0:
+                if modified_line == '':
+                    modified_line = '\n'
+                elif len(self.chords[num_chord + offset - 1]) > 1 and num_chord != 0:
                     index = modified_line.find(r'(?<!\w)\d+(?!\w)')
                     modified_line = modified_line[:index - len(self.chords[num_chord + offset - 1]) + 1] + modified_line[index]
                     modified_line = re.sub(r'(?<!\w)\d+(?!\w)', self.chords[num_chord + offset], modified_line, 1)                 
@@ -381,7 +385,7 @@ if os.path.isfile(file_path):
 w = Song('sample0', 'sample1', file_path)
 w._load_lyrics(song_dict['lyrics'])
 
-print(w.lyrics[1])
+# print(w.entries()[1].text)
 
-# for x in w.entries():
-#     print(str(x) + '\n' + '-----------------------------------------------------' + '\n')
+for x in w.entries():
+    print(str(x) + '\n' + '\n' + '-----------------------------------------------------' + '\n')

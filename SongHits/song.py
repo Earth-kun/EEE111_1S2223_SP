@@ -128,7 +128,9 @@ class ChordedLyricSegment(LyricSegment):
         for line_index, line_chord in enumerate(self.chord_annotations):
             modified_line = line_chord
             for num_chord in range(len(re.findall(r'(?<!\w)\d+(?!\w)', modified_line))):
-                if len(self.chords[num_chord + offset - 1]) > 1 and num_chord != 0:
+                if modified_line == '':
+                    modified_line = '\n'
+                elif len(self.chords[num_chord + offset - 1]) > 1 and num_chord != 0:
                     index = modified_line.find(r'(?<!\w)\d+(?!\w)')
                     modified_line = modified_line[:index - len(self.chords[num_chord + offset - 1]) + 1] + modified_line[index]
                     modified_line = re.sub(r'(?<!\w)\d+(?!\w)', self.chords[num_chord + offset], modified_line, 1)                 
