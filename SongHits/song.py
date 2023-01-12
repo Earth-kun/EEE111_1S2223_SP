@@ -127,18 +127,14 @@ class ChordedLyricSegment(LyricSegment):
 
         for line_index, line_chord in enumerate(self.chord_annotations):
             modified_line = line_chord
-            for num_chord in range(len(re.findall(r'[1-9]', modified_line))):
-                if len(self.chords[num_chord + offset - 1]) == 2 and num_chord != 0:
-                    index = modified_line.find(r'\d')
-                    modified_line = modified_line[:index-1] + modified_line[index]
-                    modified_line = re.sub(r'[1-9]', self.chords[num_chord + offset], modified_line, 1)
-                elif len(self.chords[num_chord + offset - 1]) == 3 and num_chord != 0:
-                    index = modified_line.find(r'\d')
-                    modified_line = modified_line[:index-2] + modified_line[index]
-                    modified_line = re.sub(r'[1-9]', self.chords[num_chord + offset], modified_line, 1)
+            for num_chord in range(len(re.findall(r'(?<!\w)\d+(?!\w)', modified_line))):
+                if len(self.chords[num_chord + offset - 1]) > 1 and num_chord != 0:
+                    index = modified_line.find(r'(?<!\w)\d+(?!\w)')
+                    modified_line = modified_line[:index - len(self.chords[num_chord + offset - 1]) + 1] + modified_line[index]
+                    modified_line = re.sub(r'(?<!\w)\d+(?!\w)', self.chords[num_chord + offset], modified_line, 1)                 
                 else:
-                    modified_line = re.sub(r'[1-9]', self.chords[num_chord + offset], modified_line, 1)
-            offset += len(re.findall(r'[1-9]', line_chord))
+                    modified_line = re.sub(r'(?<!\w)\d+(?!\w)', self.chords[num_chord + offset], modified_line, 1)
+            offset += len(re.findall(r'(?<!\w)\d+(?!\w)', line_chord))
             str_ChordedLyrics += modified_line + '\n'
             str_ChordedLyrics += self.text[line_index].strip() + '\n'
         
@@ -177,7 +173,7 @@ class ChordedLyricSegment(LyricSegment):
             offset = 0
 
             for x in list_dur:
-                chord_col_temp = re.search(r'[1-9]', temp)
+                chord_col_temp = re.search(r'(?<!\w)\d+(?!\w)', temp)
                 if chord_col_temp is not None:
                     chord_col_temp = chord_col_temp.start()
                     chord_col = (chord_col_temp + offset)
@@ -266,33 +262,33 @@ class Song:
             
             return cls(list_info[0][1], list_info[1][1], file_path)
 
-    @classmethod
-    def from_yaml(cls, song_dict: dict):
-        """Instantiate a Song object from a :py:mod:`yaml`-parsed dictionary
+    # @classmethod
+    # def from_yaml(cls, song_dict: dict):
+    #     """Instantiate a Song object from a :py:mod:`yaml`-parsed dictionary
 
-        This method is used to get a :py:class:`Song` object from a dictionary
-        resulting from calling :py:meth:`yaml.safe_load` or any load function
-        in the `yaml` library.
+    #     This method is used to get a :py:class:`Song` object from a dictionary
+    #     resulting from calling :py:meth:`yaml.safe_load` or any load function
+    #     in the `yaml` library.
         
-        For example, assuming that ``fh`` is a file handle to a ``.crd.yaml``
-        file, the following code snippet shows creating a :py:class:`Song` object
-        from it.
+    #     For example, assuming that ``fh`` is a file handle to a ``.crd.yaml``
+    #     file, the following code snippet shows creating a :py:class:`Song` object
+    #     from it.
 
-        .. code-block:: python
-            song_dict = yaml.safe_load(fh)
-            song_obj = Song.from_yaml(song_dict)
+    #     .. code-block:: python
+    #         song_dict = yaml.safe_load(fh)
+    #         song_obj = Song.from_yaml(song_dict)
 
-        :classmethod:
-        :param song_dict: path where the ``.crd.yaml`` file resides
-        :type song_dict: dict
+    #     :classmethod:
+    #     :param song_dict: path where the ``.crd.yaml`` file resides
+    #     :type song_dict: dict
 
-        :return: information in the dictionary stored in a :py:class:`Song` object
-        :rtype: :py:class:`Song`
-        """
-        title = song_dict['title']
-        artist = song_dict['artist']
-        file_path = #???????
-        return cls(title, artist, filepath)
+    #     :return: information in the dictionary stored in a :py:class:`Song` object
+    #     :rtype: :py:class:`Song`
+    #     """
+    #     title = song_dict['title']
+    #     artist = song_dict['artist']
+    #     file_path = #???????
+    #     return cls(title, artist, filepath)
 
     def __str__(self):
         """Returns a string with basic information about the song
@@ -379,6 +375,8 @@ class Song:
         list_chordedLS = []
         for index, line in enumerate(self.lyrics):
             list_chordedLS += [ChordedLyricSegment(self.segments[index], line, self.chords[0])]
+        
+        return list_chordedLS
 
 class SongCursor:
     """Represents a song cursor
